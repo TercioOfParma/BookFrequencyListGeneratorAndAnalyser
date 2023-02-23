@@ -2,7 +2,8 @@ import Helper
 import sys
 
 word_freq = {}
-open_file = "vulgata.txt"
+total = 0 
+open_file = "Latin.txt"
 save_file = "frequencies_latin.csv"
 if sys.argv[1]:
 	open_file = sys.argv[1]
@@ -15,6 +16,7 @@ with open(open_file) as vulgata:
 		print(line)
 		to_analyse = Helper.clean_string(line)
 		for word in to_analyse:
+			total += 1
 			if word in word_freq:
 				word_freq[word] = word_freq[word] + 1
 			else:
@@ -29,3 +31,4 @@ for word in word_freq:
 	
 to_save.close()
 
+print(total)

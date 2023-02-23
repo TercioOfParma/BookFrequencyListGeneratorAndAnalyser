@@ -8,11 +8,15 @@ class Book:
 		self.unique_words = {} 
 		self.freq_dict = {}
 		self.learnt_alone = 0
+		self.no_sentences = 0
+		self.no_clauses = 0 #Those divided by commas
+		self.average_sentence_length = 0
+		self.average_clause_length = 0
 		self.aggregate_difficulty = 0 #This is the combined total of all of the words
 		self.difficulty_score = 0 #I might remove proper nouns later, not sure
 		self.learnt_twice = 0
 	def generate_difficulty_score(self):
-		self.difficulty_score = self.aggregate_difficulty / self.word_count
+		self.difficulty_score = (self.aggregate_difficulty / self.word_count) * (self.average_sentence_length)
 		
 	def generate_learnt_words(self):
 		for word in self.unique_words:
