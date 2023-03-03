@@ -10,6 +10,12 @@ def assess_book(filename, frequency_dictionary):
 	current_sentence = 0
 	no_sentences = 0
 	no_clauses = 0 
+	
+	#Add previous words
+	for word in frequency_dictionary:
+		if "times_read" in word:
+			preread = word.replace("_times_read","")
+			to_save.unique_words[preread] = frequency_dictionary[word]
 	with open(filename, "r") as book_assess:
 		for line in book_assess:
 			line_length = line.split(" ")
@@ -45,10 +51,15 @@ def assess_book(filename, frequency_dictionary):
 				to_save.word_count = to_save.word_count + 1
 				if not word in frequency_dictionary:
 					frequency_dictionary[word] = 4000 #Make it a somewhat difficult word
+				else:
+					if frequency_dictionary[word] == 0:
+						to_save.known_words += 1
 				if not word in to_save.unique_words:
 					to_save.unique_words[word] = 1 #This adds it to a dictionary to scale difficulty of words
 					to_save.unique_count = to_save.unique_count + 1
 					new_difficulty = frequency_dictionary[word]
+					if new_difficulty > 2000: #Hard word
+						to_save.uncommon_words += 1
 				elif word in to_save.unique_words:
 					to_save.unique_words[word] = to_save.unique_words[word] + 1
 					if frequency_reduces_difficulty:
@@ -56,6 +67,7 @@ def assess_book(filename, frequency_dictionary):
 					else:
 						new_difficulty = frequency_dictionary[word]
 				to_save.aggregate_difficulty = to_save.aggregate_difficulty + new_difficulty
+		to_save.proportion_known = to_save.known_words / to_save.word_count
 		to_save.generate_difficulty_score()
 		to_save.generate_learnt_words()
 		to_save.generate_freq_dict()
@@ -63,14 +75,41 @@ def assess_book(filename, frequency_dictionary):
 
 
 def generate_book_csv_line(book):
-	return f"{book.name}, {book.word_count}, {book.unique_count}, {book.difficulty_score}, {book.learnt_alone}, {book.learnt_twice}, {book.average_sentence_length}, {book.average_clause_length}\n"
+	return f"{book.name}, {book.word_count}, {book.unique_count}, {book.difficulty_score}, {book.learnt_alone}, {book.learnt_twice}, {book.average_sentence_length}, {book.average_clause_length}, {book.uncommon_words}, {book.proportion_known}\n"
 	
 def output_books(books, output_name):
 	with open(output_name, "w") as output:
-		output.write("Name,Word Count,Unique Count, Difficulty Score,Words Learnt with only this book, Words learnt if read twice, Average Sentence Length, Average Clause Length\n")
+		output.write("Name,Word Count,Unique Count,Difficulty Score,Words Learnt with only this book,Words learnt if read twice,Average Sentence Length,Average Clause Length,Uncommon Words,Proportion Known\n")
 		for title in books:
 			output.write(generate_book_csv_line(books[title]))
 		output.close()
+		
+def apply_read_book(freq_dict, book):
+	for word in book.unique_words:
+		if word in freq_dict:
+			if book.unique_words[word] >= 12:
+				freq_dict[word] = 0 #Make the difficulty irrelevant, but still count it
+	i = 1
+	to_add = []
+	for word in freq_dict:
+		if freq_dict[word] != 0 and not "_times_read" in word:
+			freq_dict[word] = i
+			i += 1
+		if not "_times_read" in word:
+			times_read = word + "_times_read"
+			if not times_read in freq_dict:
+				to_add = to_add + [times_read] 
+	for word in to_add:
+		print(word)
+		in_unique = word.replace("_times_read", "")
+		if in_unique in book.unique_words:
+			freq_dict[word] = book.unique_words[in_unique]
+	for word in freq_dict:
+		if word in book.unique_words:
+			if not "_times_read" in word:
+				if book.unique_words[word] != 0:
+					freq_dict[word] = freq_dict[word] / book.unique_words[word]
+	return freq_dict		
 		
 def load_freq_dict(filename):
 	frequencies = {}
